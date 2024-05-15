@@ -1,24 +1,23 @@
 use dioxus::prelude::*;
-use dioxus_web::launch;
-use dioxus_toast::{ToastFrame, ToastManager, ToastInfo};
+use dioxus_toast::{ToastFrame, ToastInfo, ToastManager};
 
 fn main() {
-    dioxus_web::launch(app);
+    wasm_logger::init(wasm_logger::Config::default());
+    launch_web(App)
 }
 
-fn app(cx: Scope) -> Element {
+fn app() -> Element {
+    let mut toast = use_signal(ToastManager::default);
 
-    let toast = use_ref(&cx, ToastManager::default);
-
-    cx.render(rsx! {
+    rsx! {
         ToastFrame {
             manager: toast
         },
         button {
             onclick: move |_| {
-                toast.write().popup(ToastInfo::simple("123"));
+                toast.popup(ToastInfo::simple("123"));
             },
             "T"
         }
-    })
+    }
 }
