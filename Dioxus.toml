@@ -6,7 +6,7 @@ name = "dioxus-toast"
 # default platfrom
 # you can also use `dioxus serve/build --platform XXX` to use other platform
 # value: web | desktop
-default_platform = "desktop"
+default_platform = "web"
 
 # Web `build` & `serve` dist path
 out_dir = "dist"

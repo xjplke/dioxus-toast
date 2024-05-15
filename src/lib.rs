@@ -5,16 +5,15 @@ mod id;
 use std::collections::BTreeMap;
 
 use dioxus::prelude::*;
-use fermi::UseAtomRef;
 use id::ID;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct ToastManagerItem {
     info: ToastInfo,
     hide_after: Option<i64>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ToastManager {
     list: BTreeMap<usize, ToastManagerItem>,
     maximum_toast: u8,
@@ -86,7 +85,7 @@ pub enum Icon {
     Info,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ToastInfo {
     pub heading: Option<String>,
     pub context: String,
@@ -153,20 +152,20 @@ impl ToastInfo {
     }
 }
 
-#[derive(Props)]
-pub struct ToastFrameProps<'a> {
-    manager: &'a UseAtomRef<ToastManager>,
+#[derive(Props, Clone, PartialEq)]
+pub struct ToastFrameProps {
+    manager: ToastManager,
 }
 
-pub fn ToastFrame<'a>(cx: Scope<'a, ToastFrameProps<'a>>) -> Element {
-    let manager = cx.props.manager;
+pub fn ToastFrame(props: ToastFrameProps) -> Element {
+    let mut manager = Signal::new(props.manager);
 
     let toast_list = &manager.read().list;
 
-    let mut bottom_left_ele: Vec<LazyNodes> = vec![];
-    let mut bottom_right_ele: Vec<LazyNodes> = vec![];
-    let mut top_left_ele: Vec<LazyNodes> = vec![];
-    let mut top_right_ele: Vec<LazyNodes> = vec![];
+    let mut bottom_left_ele: Vec<VNode> = vec![];
+    let mut bottom_right_ele: Vec<VNode> = vec![];
+    let mut top_left_ele: Vec<VNode> = vec![];
+    let mut top_right_ele: Vec<VNode> = vec![];
 
     for (_, (id, item)) in toast_list.iter().enumerate() {
         let current_id = *id;
@@ -191,34 +190,27 @@ pub fn ToastFrame<'a>(cx: Scope<'a, ToastFrameProps<'a>>) -> Element {
                 class: "toast-single {icon_class}",
                 id: "{id}",
                 if item.info.allow_toast_close {
-                    cx.render(rsx! {
-                        div {
-                            class: "close-toast-single",
-                            onclick: move |_| {
-                                manager.write().list.remove(&current_id);
-                            },
-                            "×",
-                        }
-                    })
-                } else {
-                    None
+                    div {
+                        class: "close-toast-single",
+                        onclick: move |_| {
+                            manager.write().list.remove(&current_id);
+                        },
+                        "×",
+                    }
                 }
                 if let Some(v) = &item.info.heading {
-                    cx.render(rsx! {
-                        h2 {
-                            class: "toast-heading",
-                            "{v}"
-                        }
-                    })
-                } else {
-                    None
+                    h2 {
+                        class: "toast-heading",
+                        "{v}"
+                    }
                 }
 
                 span {
                     dangerous_inner_html: "{item.info.context}",
                 }
             }
-        };
+        }
+        .unwrap();
 
         if item.info.position == Position::BottomLeft {
             bottom_left_ele.push(element);
@@ -231,8 +223,8 @@ pub fn ToastFrame<'a>(cx: Scope<'a, ToastFrameProps<'a>>) -> Element {
         }
     }
 
-    use_future(cx, (), |_| {
-        let toast_manager = manager.clone();
+    let _res = use_resource(move || {
+        let mut toast_manager = manager.clone();
         async move {
             loop {
                 let timer_list = toast_manager.read().list.clone();
@@ -248,32 +240,32 @@ pub fn ToastFrame<'a>(cx: Scope<'a, ToastFrameProps<'a>>) -> Element {
         }
     });
 
-    cx.render(rsx! {
+    rsx! {
         div {
             class: "toast-scope",
-            style {  include_str!("./assets/toast.css")  },
+            //style {  include_str!("./assets/toast.css")  },
             div {
                 class: "toast-wrap bottom-left",
                 id: "wrap-bottom-left",
-                bottom_left_ele.into_iter()
+                {bottom_left_ele.into_iter()}
             }
             div {
                 class: "toast-wrap bottom-right",
                 id: "wrap-bottom-right",
-                bottom_right_ele.into_iter()
+                {bottom_right_ele.into_iter()}
             }
             div {
                 class: "toast-wrap top-left",
                 id: "wrap-top-left",
-                top_left_ele.into_iter()
+                {top_left_ele.into_iter()}
             }
             div {
                 class: "toast-wrap top-right",
                 id: "wrap-top-right",
-                top_right_ele.into_iter()
+                {top_right_ele.into_iter()}
             }
         }
-    })
+    }
 }
 
 #[cfg(feature = "web")]
