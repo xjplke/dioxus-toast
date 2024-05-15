@@ -154,11 +154,11 @@ impl ToastInfo {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct ToastFrameProps {
-    manager: ToastManager,
+    manager: Signal<ToastManager>,
 }
 
 pub fn ToastFrame(props: ToastFrameProps) -> Element {
-    let mut manager = Signal::new(props.manager);
+    let mut manager = props.manager;
 
     let toast_list = &manager.read().list;
 
